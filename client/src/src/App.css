@@ -1,0 +1,392 @@
+:root {
+  --bg: #171412;
+  --surface: #221E1A;
+  --surface-raised: #2B261F;
+  --border: #3A342B;
+  --text: #F5EFE6;
+  --text-muted: #A69C8C;
+  --accent: #E3A008;
+  --accent-ink: #171412;
+  --success: #4C7A51;
+  --success-bg: #1E2A1E;
+  --danger: #B33A3A;
+  --danger-bg: #2A1B1B;
+  --pending: #C08A2E;
+  --pending-bg: #2A2116;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+.app-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app-header__mark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.app-header__brand h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.app-header__brand p {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.tab {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.tab--active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ---- Browse ------------------------------------------------------- */
+
+.browse-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.restaurant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.restaurant-card {
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--text);
+  font-family: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.restaurant-card:hover {
+  border-color: var(--accent);
+}
+
+.restaurant-card--selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.restaurant-card__image {
+  height: 110px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--surface-raised);
+}
+
+.restaurant-card__body {
+  padding: 12px 14px 14px;
+}
+
+.restaurant-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.restaurant-card__top h3 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  margin: 0;
+}
+
+.restaurant-card__meta {
+  margin: 4px 0 6px;
+  font-size: 12px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.restaurant-card__desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.menu-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: sticky;
+  top: 20px;
+}
+
+.menu-panel h2 {
+  font-family: var(--font-display);
+  margin: 0 0 2px;
+}
+
+.menu-panel__subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+.menu-category h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin: 18px 0 10px;
+}
+
+.menu-category:first-child h4 {
+  margin-top: 0;
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.menu-item__name {
+  margin: 0;
+  font-weight: 500;
+}
+
+.menu-item__desc {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.menu-item__price {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  white-space: nowrap;
+  margin: 0;
+}
+
+/* ---- Kitchen desk --------------------------------------------------- */
+
+.kitchen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.kitchen-header label {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kitchen-header select {
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.capacity-meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.ticket-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+/* Kitchen-chit styled ticket: dashed torn edge + monospace order id — the
+   signature element for the owner-facing view. */
+.ticket {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px dashed var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  position: relative;
+}
+
+.ticket__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.ticket__id {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.ticket__items {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.ticket__time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.ticket__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 0;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--accept {
+  background: var(--success);
+  color: #EFF6EE;
+}
+
+.btn--reject {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn--complete {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.badge--pending { background: var(--pending-bg); color: var(--pending); }
+.badge--accepted { background: var(--success-bg); color: var(--success); }
+.badge--rejected { background: var(--danger-bg); color: var(--danger); }
+.badge--completed { background: var(--surface-raised); color: var(--text-muted); }
+.badge--closed { background: var(--danger-bg); color: var(--danger); margin-top: 8px; display: inline-block; }
+
+.ticket--pending { border-left: 3px solid var(--pending); }
+.ticket--accepted { border-left: 3px solid var(--success); }
+.ticket--rejected { border-left: 3px solid var(--danger); opacity: 0.7; }
+.ticket--completed { border-left: 3px solid var(--border); opacity: 0.6; }
+
+.empty-state {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+.empty-state--error {
+  color: var(--danger);
+}
+
+@media (max-width: 800px) {
+  .browse-layout {
+    grid-template-columns: 1fr;
+  }
+  .menu-panel {
+    position: static;
+  }
+}

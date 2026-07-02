@@ -1,0 +1,7 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background: #171412;
+  color: #F5EFE6;
+}
