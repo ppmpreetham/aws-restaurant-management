@@ -1,0 +1,27 @@
+services:
+  restaurants:
+    build: ./restaurants
+    ports:
+      - "8001:8001"
+
+  reservations:
+    build: ./reservations
+    ports:
+      - "8002:8002"
+    depends_on:
+      - restaurants
+
+  orders:
+    build: ./orders
+    ports:
+      - "8003:8003"
+    depends_on:
+      - restaurants
+      - reservations
+
+  search:
+    build: ./search
+    ports:
+      - "8004:8004"
+    depends_on:
+      - restaurants
