@@ -3,15 +3,25 @@ services:
     build: ./restaurants
     ports:
       - "8001:8001"
+    environment:
+      PORT: 8001
+      DATABASE_URL: ${RESTAURANT_DATABASE_URL:-postgres://postgres:postgres@host.docker.internal:5432/restaurants}
 
   reservations:
     build: ./reservations
     ports:
       - "8002:8002"
+    environment:
+      PORT: 8002
+      DATABASE_URL: ${RESERVATION_DATABASE_URL:-postgres://postgres:postgres@host.docker.internal:5432/reservations}
+      RESTAURANT_SERVICE_URL: http://restaurants:8001
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      SNS_TOPIC_ARN: ${SNS_TOPIC_ARN:-}
     depends_on:
       - restaurants
 
   orders:
+    profiles: ['future']
     build: ./orders
     ports:
       - "8003:8003"
@@ -20,6 +30,7 @@ services:
       - reservations
 
   search:
+    profiles: ['future']
     build: ./search
     ports:
       - "8004:8004"
