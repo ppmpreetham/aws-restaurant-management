@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Browse } from "./pages/Browse";
 import { Kitchen } from "./pages/Kitchen";
+import Orders from "./pages/Orders";
 import "./App.css";
 
-type Tab = "browse" | "kitchen";
+type Tab = "browse" | "kitchen" | "orders";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("browse");
@@ -15,9 +16,13 @@ export default function App() {
           <span className="app-header__mark">TT</span>
           <div>
             <h1>Table &amp; Tray</h1>
-            <p>Restaurant service: listings, menus &amp; kitchen order desk</p>
+            <p>
+              Restaurant service: listings, menus, kitchen desk &amp; customer
+              ordering
+            </p>
           </div>
         </div>
+
         <nav className="tabs">
           <button
             className={tab === "browse" ? "tab tab--active" : "tab"}
@@ -25,16 +30,28 @@ export default function App() {
           >
             Browse
           </button>
+
           <button
             className={tab === "kitchen" ? "tab tab--active" : "tab"}
             onClick={() => setTab("kitchen")}
           >
-            Kitchen desk
+            Kitchen Desk
+          </button>
+
+          <button
+            className={tab === "orders" ? "tab tab--active" : "tab"}
+            onClick={() => setTab("orders")}
+          >
+            🍽 Order Food
           </button>
         </nav>
       </header>
 
-      <main className="app-main">{tab === "browse" ? <Browse /> : <Kitchen />}</main>
+      <main className="app-main">
+        {tab === "browse" && <Browse />}
+        {tab === "kitchen" && <Kitchen />}
+        {tab === "orders" && <Orders />}
+      </main>
     </div>
   );
 }

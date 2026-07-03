@@ -1,0 +1,41 @@
+### Health Check
+
+GET http://localhost:4002/health
+
+
+### Create Order
+
+POST http://localhost:4002/api/orders
+Content-Type: application/json
+
+{
+    "customerName":"Arnav",
+    "restaurantId":1,
+    "items":[
+        {
+            "name":"Burger",
+            "quantity":2,
+            "price":250
+        },
+        {
+            "name":"Pizza",
+            "quantity":1,
+            "price":400
+        }
+    ]
+}
+
+
+### Get Orders
+
+GET http://localhost:4002/api/orders
+
+
+### Get Order
+
+GET http://localhost:4002/api/orders/1
+
+
+### Cancel Order
+
+PATCH http://localhost:4002/api/orders/1/cancel

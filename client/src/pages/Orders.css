@@ -1,0 +1,170 @@
+.orders-page {
+  display: flex;
+  gap: 30px;
+  padding: 30px;
+  align-items: flex-start;
+  min-height: 100vh;
+  background: #14110f;
+  color: white;
+}
+
+.menu-section {
+  flex: 3;
+}
+
+.menu-section h1 {
+  margin-bottom: 25px;
+  font-size: 32px;
+}
+
+.food-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.food-card {
+  background: #1f1b18;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: .25s;
+  border: 1px solid #2f2a27;
+}
+
+.food-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,.35);
+}
+
+.food-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.food-card h3 {
+  margin: 15px;
+  margin-bottom: 8px;
+}
+
+.food-card p {
+  margin: 0 15px;
+  color: #bcbcbc;
+  min-height: 45px;
+}
+
+.food-card h2 {
+  margin: 15px;
+  color: #ffb300;
+}
+
+.food-card button {
+  margin: 15px;
+  width: calc(100% - 30px);
+  background: #ffb300;
+  color: black;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.food-card button:hover {
+  background: #ffc533;
+}
+
+.qty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin: 15px;
+}
+
+.qty button {
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  border-radius: 50%;
+}
+
+.qty span {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.cart-section {
+  width: 360px;
+  position: sticky;
+  top: 25px;
+  background: #1f1b18;
+  padding: 25px;
+  border-radius: 14px;
+  border: 1px solid #2f2a27;
+}
+
+.cart-section h2 {
+  margin-top: 0;
+}
+
+.cart-section input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: none;
+  background: #2b2623;
+  color: white;
+  box-sizing: border-box;
+}
+
+.cart-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 0;
+}
+
+.cart-section hr {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 20px 0;
+}
+
+.cart-section button {
+  width: 100%;
+  padding: 14px;
+  background: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: bold;
+}
+
+.cart-section button:hover {
+  background: #27ae60;
+}
+
+.success {
+  margin-top: 18px;
+  color: #2ecc71;
+  font-weight: bold;
+  text-align: center;
+  background: rgba(46,204,113,.15);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+@media (max-width: 1000px) {
+  .orders-page {
+    flex-direction: column;
+  }
+
+  .cart-section {
+    width: 100%;
+    position: static;
+  }
+}
