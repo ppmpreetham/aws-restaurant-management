@@ -11,7 +11,7 @@ This service allows users to search restaurants by:
 - Cuisine
 - Food Items
 
-The application is deployed on Amazon EC2 using Python Flask.
+The application is deployed on Amazon EC2 using Node.js and Express.js.
 
 ---
 
@@ -24,8 +24,8 @@ The application is deployed on Amazon EC2 using Python Flask.
 
 ## Technologies
 
-- Python 3
-- Flask
+- Node.js
+- Express.js
 - JSON
 - REST API
 
@@ -35,18 +35,28 @@ The application is deployed on Amazon EC2 using Python Flask.
 
 search-service/
 │
-├── app.py
+├── app.js
 ├── restaurants.json
-├── requirements.txt
+├── package.json
 └── README.md
 
 ---
 
 ## REST APIs
 
+### Home
+
+GET /
+
+Returns a message indicating that the Search Microservice is running.
+
+---
+
 ### Get All Restaurants
 
 GET /restaurants
+
+Returns a list of all available restaurants.
 
 ---
 
@@ -54,11 +64,15 @@ GET /restaurants
 
 GET /search?name=Pizza
 
+Returns restaurants matching the specified name.
+
 ---
 
 ### Search by City
 
 GET /search?city=Bhopal
+
+Returns restaurants located in the specified city.
 
 ---
 
@@ -66,32 +80,65 @@ GET /search?city=Bhopal
 
 GET /search?cuisine=Italian
 
+Returns restaurants serving the specified cuisine.
+
 ---
 
-### Search by Food
+### Search by Food Item
 
 GET /search?food=Burger
+
+Returns restaurants serving the specified food item.
 
 ---
 
 ## Running the Application
 
-Install dependencies
+Install project dependencies
 
-pip3 install -r requirements.txt
+```bash
+npm install
+```
 
-Run the application
+Start the application
 
-python3 app.py
+```bash
+npm start
+```
+
+or
+
+```bash
+node app.js
+```
 
 Application URL
 
+```
 http://localhost:8004
+```
 
 ---
 
-## Developed By
+## Features
 
-Sahil Gautam
+- Search restaurants by name
+- Search restaurants by city
+- Search restaurants by cuisine
+- Search restaurants by food item
+- View all restaurants
+- RESTful API using Express.js
 
-B.Tech Cloud Computing and Automation
+---
+
+## Developer
+
+**Sahil Gautam**
+
+B.Tech – Cloud Computing and Automation
+
+---
+
+## License
+
+This project is developed for academic purposes as part of the **Restaurant Reservation and Ordering System** using a **Microservices Architecture**.
