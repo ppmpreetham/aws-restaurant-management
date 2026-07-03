@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "name": "Pizza Palace",
+    "city": "Bhopal",
+    "cuisine": "Italian",
+    "menu": [
+      "Pizza",
+      "Pasta",
+      "Garlic Bread"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Spice Garden",
+    "city": "Indore",
+    "cuisine": "Indian",
+    "menu": [
+      "Biryani",
+      "Paneer Butter Masala",
+      "Naan"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Burger Hub",
+    "city": "Delhi",
+    "cuisine": "Fast Food",
+    "menu": [
+      "Burger",
+      "French Fries",
+      "Cold Drink"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Dragon Wok",
+    "city": "Mumbai",
+    "cuisine": "Chinese",
+    "menu": [
+      "Noodles",
+      "Fried Rice",
+      "Manchurian"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "South Spice",
+    "city": "Chennai",
+    "cuisine": "South Indian",
+    "menu": [
+      "Dosa",
+      "Idli",
+      "Sambar"
+    ]
+  }
+]
