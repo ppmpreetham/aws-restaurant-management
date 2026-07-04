@@ -1,10 +1,23 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { User, LogOut, Wallet } from "lucide-react";
 import { useStore } from "../useStore";
 
 export function Layout() {
   const location = useLocation();
-  const credits = useStore((state) => state.credits);
+  const { credits, setCredits } = useStore();
+
+  useEffect(() => {
+    // Mock user id 1
+    fetch('http://localhost:8080/api/users/1/credits')
+      .then(res => res.json())
+      .then(data => {
+        if (data.credits !== undefined) {
+          setCredits(data.credits);
+        }
+      })
+      .catch(err => console.error(err));
+  }, [setCredits]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -41,7 +54,7 @@ export function Layout() {
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 border border-[var(--border-visible)] text-[var(--success)] font-[var(--font-mono)] text-[var(--label)]">
             <Wallet size={14} />
-            <span>${credits.toFixed(2)} CREDITS</span>
+            <span>${credits !== null ? credits.toFixed(2) : '---'} CREDITS</span>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-[var(--text-secondary)] font-[var(--font-mono)] text-[var(--label)] ml-2">
             <User size={14} />

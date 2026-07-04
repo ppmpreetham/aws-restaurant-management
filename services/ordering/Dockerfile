@@ -19,6 +19,7 @@ COPY package*.json ./
 RUN npm install -g pnpm && pnpm install --prod
 
 COPY --from=build /app/dist ./dist
+COPY src/schema.sql ./dist/schema.sql
 
 EXPOSE 8003
 CMD ["node", "dist/server.js"]

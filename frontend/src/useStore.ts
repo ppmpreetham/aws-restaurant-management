@@ -1,15 +1,14 @@
 import { create } from 'zustand';
 
 interface StoreState {
-  credits: number;
+  credits: number | null;
+  setCredits: (amount: number) => void;
   deductCredits: (amount: number) => void;
-  addCredits: (amount: number) => void;
 }
 
 export const useStore = create<StoreState>((set) => ({
-  credits: 500.0, // Starting default credits for the mock user
+  credits: null, // Start as null until fetched
+  setCredits: (amount: number) => set({ credits: amount }),
   deductCredits: (amount: number) => 
-    set((state) => ({ credits: Math.max(0, state.credits - amount) })),
-  addCredits: (amount: number) => 
-    set((state) => ({ credits: state.credits + amount })),
+    set((state) => ({ credits: state.credits !== null ? Math.max(0, state.credits - amount) : null })),
 }));

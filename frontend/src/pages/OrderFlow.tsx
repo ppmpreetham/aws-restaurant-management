@@ -52,7 +52,7 @@ export function OrderFlow() {
   }, [cart]);
 
   const credits = useStore((state) => state.credits);
-  const hasEnoughCredits = credits >= totals.total;
+  const hasEnoughCredits = credits !== null && credits >= totals.total;
 
   const [isPlacing, setIsPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -5,8 +5,6 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_PASSWORD: admin_password # superuser password for init
-    volumes:
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     ports:
       - "5432:5432"
 
@@ -60,15 +58,3 @@ services:
     depends_on:
       - postgres
       - restaurants
-
-  gateway:
-    image: nginx:alpine
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./services/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - restaurants
-      - reservations
-      - orders
-      - search

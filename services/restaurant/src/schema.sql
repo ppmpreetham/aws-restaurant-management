@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS restaurant_orders (
   items_snapshot      JSONB,                    -- copy of items at the time the order came in
   status              VARCHAR(20) NOT NULL DEFAULT 'pending',
                       -- pending -> accepted | rejected -> completed
+  reason              TEXT,
   created_at          TIMESTAMP DEFAULT NOW(),
   updated_at          TIMESTAMP DEFAULT NOW()
 );

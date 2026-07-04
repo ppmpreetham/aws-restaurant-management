@@ -42,7 +42,7 @@ export function Reserve() {
   const reservationCost = 50;
   const taxes = 10;
   const total = reservationCost + taxes;
-  const hasEnoughCredits = credits >= total;
+  const hasEnoughCredits = credits !== null && credits >= total;
 
   const handlePay = () => {
     if (!hasEnoughCredits) return;

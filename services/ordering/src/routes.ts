@@ -39,9 +39,35 @@ router.post("/orders", async (req, res) => {
             0
         );
 
+        // Assume user ID 1 for now (mock user)
+        const userId = 1;
+
         const orderUUID = uuidv4();
 
         const order = await withTransaction(async (client) => {
+            // Lock the user row to prevent race conditions
+            const userResult = await client.query(
+                `SELECT credits FROM users WHERE id = $1 FOR UPDATE`,
+                [userId]
+            );
+
+            if (userResult.rows.length === 0) {
+                throw new Error('User not found');
+            }
+
+            const currentCredits = parseFloat(userResult.rows[0].credits);
+
+            if (currentCredits < total) {
+                throw new Error('INSUFFICIENT_CREDITS');
+            }
+
+            // Deduct credits
+            await client.query(
+                `UPDATE users SET credits = credits - $1 WHERE id = $2`,
+                [total, userId]
+            );
+
+            // Insert Order
             const orderResult = await client.query(
                 `
                 INSERT INTO orders
@@ -84,6 +110,26 @@ router.post("/orders", async (req, res) => {
                     ]
                 );
             }
+
+            // Record transaction
+            await client.query(
+                `
+                INSERT INTO credit_transactions
+                (
+                    user_id,
+                    type,
+                    amount,
+                    reference
+                )
+                VALUES($1,$2,$3,$4)
+                `,
+                [
+                    userId,
+                    'ORDER_PAYMENT',
+                    total,
+                    orderUUID
+                ]
+            );
             
             return insertedOrder;
         });
@@ -123,14 +169,36 @@ router.post("/orders", async (req, res) => {
 
         res.status(201).json(order);
 
-    } catch (err) {
+    } catch (err: any) {
 
         console.error(err);
+
+        if (err.message === 'INSUFFICIENT_CREDITS') {
+            return res.status(402).json({
+                error: "Insufficient credits to place this order"
+            });
+        }
 
         res.status(500).json({
             error: "Internal Server Error"
         });
 
+    }
+});
+
+router.get("/users/:id/credits", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const result = await pool.query("SELECT credits FROM users WHERE id = $1", [id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json({ credits: parseFloat(result.rows[0].credits) });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
