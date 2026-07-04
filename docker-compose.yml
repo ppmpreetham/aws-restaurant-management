@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: admin_password # superuser password for init
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+
+  restaurants:
+    build: ./services/restaurant
+    ports:
+      - "8001:8001"
+    environment:
+      PORT: 8001
+      DATABASE_URL: postgres://restaurant_user:restaurant_pass@postgres:5432/restaurant_db
+      S3_BUCKET: local-bucket
+      AWS_REGION: us-east-1
+    depends_on:
+      - postgres
+
+  reservations:
+    build: ./services/reservation
+    ports:
+      - "8002:8002"
+    environment:
+      PORT: 8002
+      DATABASE_URL: postgres://reservation_user:reservation_pass@postgres:5432/reservation_db
+      RESTAURANT_SERVICE_URL: http://restaurants:8001
+      AWS_REGION: us-east-1
+      SNS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:reservations
+    depends_on:
+      - postgres
+      - restaurants
+
+  orders:
+    build: ./services/ordering
+    ports:
+      - "8003:8003"
+    environment:
+      PORT: 8003
+      DATABASE_URL: postgres://ordering_user:ordering_pass@postgres:5432/ordering_db
+      RESTAURANT_SERVICE_URL: http://restaurants:8001
+    depends_on:
+      - postgres
+      - restaurants
+      - reservations
+
+  search:
+    build: ./services/search
+    ports:
+      - "8004:8004"
+    environment:
+      PORT: 8004
+      DATABASE_URL: postgres://search_user:search_pass@postgres:5432/search_db
+      RESTAURANT_SERVICE_URL: http://restaurants:8001
+    depends_on:
+      - postgres
+      - restaurants
+
+  gateway:
+    image: nginx:alpine
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./services/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - restaurants
+      - reservations
+      - orders
+      - search

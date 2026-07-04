@@ -1,9 +1,13 @@
 server/node_modules/
 server/.env
 
-server/*/dist/
-server/*/node_modules/
-server/*/.env
+services/*/dist/
+services/*/node_modules/
+services/*/.env
+
+server/*/*/dist/
+server/*/*/node_modules/
+server/*/*/.env
 
 client/node_modules/
 client/dist/

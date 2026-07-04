@@ -1,0 +1,591 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Restaurant Management System - 10/10 Architecture'
+
+Parameters:
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+  DbUsername:
+    Type: String
+    Default: postgres_admin
+  DbPassword:
+    Type: String
+    NoEcho: true
+    Default: AdminPassword123!
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64'
+
+Resources:
+  # ---------------------------------------------------------
+  # NETWORKING
+  # ---------------------------------------------------------
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  Subnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  Subnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # ---------------------------------------------------------
+  # SECURITY GROUPS
+  # ---------------------------------------------------------
+  AlbSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP from everywhere (API Gateway to ALB)
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  RestaurantSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Restaurant Service SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8001
+          ToPort: 8001
+          SourceSecurityGroupId: !Ref AlbSG
+
+  OrderingSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Ordering Service SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8003
+          ToPort: 8003
+          SourceSecurityGroupId: !Ref AlbSG
+
+  ReservationSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Reservation Service SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8002
+          ToPort: 8002
+          SourceSecurityGroupId: !Ref AlbSG
+        - IpProtocol: tcp
+          FromPort: 8002
+          ToPort: 8002
+          SourceSecurityGroupId: !Ref OrderingSG
+
+  SearchSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Search Service SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8004
+          ToPort: 8004
+          SourceSecurityGroupId: !Ref AlbSG
+
+  RdsSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS PostgreSQL SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref RestaurantSG
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ReservationSG
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref OrderingSG
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref SearchSG
+
+  # ---------------------------------------------------------
+  # IAM ROLES
+  # ---------------------------------------------------------
+  BaseInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+
+  RestaurantInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub "${ImageBucket.Arn}/*"
+
+  ReservationInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: SNSAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref ReservationTopic
+
+  BaseInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref BaseInstanceRole
+
+  RestaurantInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref RestaurantInstanceRole
+
+  ReservationInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref ReservationInstanceRole
+
+  # ---------------------------------------------------------
+  # STORAGE & CDN
+  # ---------------------------------------------------------
+  ImageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "restaurant-assets-${AWS::AccountId}-${AWS::Region}"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: S3-OAC
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt ImageBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [ GET, HEAD, OPTIONS ]
+          CachedMethods: [ GET, HEAD ]
+          ForwardedValues:
+            QueryString: false
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ImageBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${ImageBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution.Id}"
+
+  # ---------------------------------------------------------
+  # MESSAGING
+  # ---------------------------------------------------------
+  ReservationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: reservation-notifications
+
+  # ---------------------------------------------------------
+  # DATABASE (RDS)
+  # ---------------------------------------------------------
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: RDS Subnet Group
+      SubnetIds:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: postgres
+      EngineVersion: "15"
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      DBName: postgres
+      MasterUsername: !Ref DbUsername
+      MasterUserPassword: !Ref DbPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RdsSG
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: true
+
+  # ---------------------------------------------------------
+  # LOAD BALANCER & TARGET GROUPS
+  # ---------------------------------------------------------
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref AlbSG
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: '404'
+            ContentType: text/plain
+
+  RestaurantTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 8001
+      Protocol: HTTP
+      HealthCheckPath: /health
+
+  ReservationTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 8002
+      Protocol: HTTP
+      HealthCheckPath: /health
+
+  OrderingTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 8003
+      Protocol: HTTP
+      HealthCheckPath: /health
+
+  SearchTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 8004
+      Protocol: HTTP
+      HealthCheckPath: /health
+
+  RestaurantListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref ALBListener
+      Priority: 10
+      Conditions:
+        - Field: path-pattern
+          Values: ['/api/restaurants*']
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref RestaurantTG
+
+  ReservationListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref ALBListener
+      Priority: 20
+      Conditions:
+        - Field: path-pattern
+          Values: ['/api/reservations*']
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ReservationTG
+
+  OrderingListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref ALBListener
+      Priority: 30
+      Conditions:
+        - Field: path-pattern
+          Values: ['/api/orders*']
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref OrderingTG
+
+  SearchListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref ALBListener
+      Priority: 40
+      Conditions:
+        - Field: path-pattern
+          Values: ['/api/search*']
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref SearchTG
+
+  # ---------------------------------------------------------
+  # API GATEWAY
+  # ---------------------------------------------------------
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: RestaurantGateway
+      ProtocolType: HTTP
+
+  ApiVpcLink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: AlbVpcLink
+      SubnetIds:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroupIds:
+        - !Ref AlbSG
+
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Ref ALBListener
+      IntegrationMethod: ANY
+      ConnectionType: VPC_LINK
+      ConnectionId: !Ref ApiVpcLink
+      PayloadFormatVersion: '1.0'
+
+  ApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "ANY /{proxy+}"
+      Target: !Sub "integrations/${ApiIntegration}"
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: prod
+      AutoDeploy: true
+
+  # ---------------------------------------------------------
+  # ECR REPOSITORIES
+  # ---------------------------------------------------------
+  RestaurantRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: restaurant-management-restaurant
+  ReservationRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: restaurant-management-reservation
+  OrderingRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: restaurant-management-ordering
+  SearchRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: restaurant-management-search
+
+  # ---------------------------------------------------------
+  # AUTO SCALING & LAUNCH TEMPLATES
+  # ---------------------------------------------------------
+  # (Simplified example for Restaurant, repeats for others)
+  RestaurantLT:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !Ref LatestAmiId
+        InstanceType: t3.micro
+        IamInstanceProfile:
+          Arn: !GetAtt RestaurantInstanceProfile.Arn
+        SecurityGroupIds:
+          - !Ref RestaurantSG
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y docker
+            systemctl start docker
+            systemctl enable docker
+            aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+            docker pull ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/restaurant-management-restaurant:latest
+            docker run -d -p 8001:8001 \
+              -e DATABASE_URL=postgres://restaurant_user:restaurant_pass@${Database.Endpoint.Address}:5432/restaurant_db \
+              -e S3_BUCKET=${ImageBucket} \
+              ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/restaurant-management-restaurant:latest
+
+  RestaurantASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref RestaurantLT
+        Version: !GetAtt RestaurantLT.LatestVersionNumber
+      MinSize: '1'
+      MaxSize: '2'
+      DesiredCapacity: '1'
+      TargetGroupARNs:
+        - !Ref RestaurantTG
+
+  # ---------------------------------------------------------
+  # CLOUDTRAIL
+  # ---------------------------------------------------------
+  TrailBucket:
+    Type: AWS::S3::Bucket
+  TrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt TrailBucket.Arn
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub "${TrailBucket.Arn}/AWSLogs/${AWS::AccountId}/*"
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+  AuditTrail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: TrailBucketPolicy
+    Properties:
+      IsLogging: true
+      S3BucketName: !Ref TrailBucket
+
+Outputs:
+  ApiGatewayUrl:
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+  CloudFrontUrl:
+    Value: !GetAtt CloudFrontDistribution.DomainName

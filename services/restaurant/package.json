@@ -1,0 +1,31 @@
+{
+  "name": "restaurant-service",
+  "version": "1.0.0",
+  "description": "Restaurant Service - restaurants, menu, inventory, and restaurant-side order status for the Restaurant Reservation & Ordering System",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "seed": "ts-node src/seed.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1079.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.0.1",
+    "multer": "^2.2.0",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^20.14.9",
+    "@types/pg": "^8.11.6",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.3"
+  }
+}
