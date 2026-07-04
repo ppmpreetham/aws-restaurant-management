@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { api } from "../api/restaurantApi"
 import type { InventoryStatus, Restaurant, RestaurantOrder } from "../types"
 import { OrderTicket } from "../components/OrderTicket"
+import { Dropdown } from "../components/Dropdown"
 
 export function Kitchen() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
@@ -39,12 +40,12 @@ export function Kitchen() {
     return () => clearInterval(interval)
   }, [restaurantId])
 
-  const handleDecision = async (orderId: number, status: "accepted" | "rejected") => {
-    if (restaurantId === null) return
-    setBusyId(orderId)
+  const handleDecision = async (orderId: number, status: 'accepted' | 'rejected', reason?: string) => {
+    if (restaurantId === null) return;
+    setBusyId(orderId);
     try {
-      await api.updateOrderStatus(restaurantId, orderId, status)
-      refresh(restaurantId)
+      await api.updateOrderStatus(restaurantId, orderId, status, reason);
+      refresh(restaurantId);
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -67,29 +68,25 @@ export function Kitchen() {
 
   return (
     <div className="animate-in fade-in duration-300">
-      <header className="mb-12 border-b border-[var(--border)] pb-8 flex justify-between items-end">
+      <header className="mb-8 md:mb-12 border-b border-[var(--border)] pb-6 md:pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
         <div>
-          <h1 className="font-[var(--font-doto)] text-[var(--display-lg)] leading-none mb-4 tracking-tighter text-[var(--accent)]">
+          <h1 className="font-[var(--font-doto)] text-4xl md:text-[var(--display-lg)] leading-none mb-4 tracking-tighter text-[var(--accent)]">
             KITCHEN
           </h1>
-          <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] uppercase tracking-widest gap-2 flex flex-col w-75">
-            <label className="mr-4 text-[var(--text-primary)]">LOCATION:</label>
-            <select
-              value={restaurantId ?? ""}
-              onChange={(e) => setRestaurantId(Number(e.target.value))}
-              className="w-full bg-transparent border border-[var(--border-visible)] p-2 focus:outline-none focus:border-[var(--text-primary)] transition-colors text-[var(--text-primary)]"
-            >
-              {restaurants.map((r) => (
-                <option key={r.id} value={r.id} className="bg-[var(--black)]">
-                  {r.name}
-                </option>
-              ))}
-            </select>
+          <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] uppercase tracking-widest flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+            <span className="text-[var(--text-primary)]">LOCATION:</span>
+            <div className="w-full md:w-64">
+              <Dropdown
+                value={restaurantId?.toString() ?? ''}
+                onChange={(val) => setRestaurantId(Number(val))}
+                options={restaurants.map(r => ({ label: r.name, value: r.id.toString() }))}
+              />
+            </div>
           </div>
         </div>
 
         {inventory && (
-          <div className="text-right">
+          <div className="md:text-right bg-[var(--surface-raised)] p-4 border border-[var(--border-visible)] md:bg-transparent md:p-0 md:border-none">
             <div className="font-[var(--font-doto)] text-4xl mb-2 tracking-tighter">
               {inventory.activeOrders}
               <span className="text-2xl text-[var(--text-secondary)]">

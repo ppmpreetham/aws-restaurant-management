@@ -1,8 +1,10 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Wallet } from "lucide-react";
+import { useStore } from "../useStore";
 
 export function Layout() {
   const location = useLocation();
+  const credits = useStore((state) => state.credits);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -13,14 +15,14 @@ export function Layout() {
               T
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-none tracking-tight">TABLE & TRAY</h1>
+              <h1 className="font-bold text-sm md:text-lg leading-none tracking-tight">TABLE & TRAY</h1>
               <p className="text-[var(--text-secondary)] text-[var(--label)] uppercase tracking-widest mt-1">
                 Management System
               </p>
             </div>
           </Link>
 
-          <nav className="hidden md:flex ml-12 gap-6 font-[var(--font-mono)] text-[var(--label)] tracking-widest uppercase">
+          <nav className="flex ml-4 md:ml-12 gap-4 md:gap-6 font-[var(--font-mono)] text-[var(--label)] tracking-widest uppercase text-xs md:text-sm">
             <Link 
               to="/search" 
               className={`hover:text-[var(--text-primary)] transition-colors ${location.pathname.startsWith('/search') || location.pathname.startsWith('/restaurant') ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
@@ -37,9 +39,13 @@ export function Layout() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 text-[var(--text-secondary)] font-[var(--font-mono)] text-[var(--label)]">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 border border-[var(--border-visible)] text-[var(--success)] font-[var(--font-mono)] text-[var(--label)]">
+            <Wallet size={14} />
+            <span>${credits.toFixed(2)} CREDITS</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-[var(--text-secondary)] font-[var(--font-mono)] text-[var(--label)] ml-2">
             <User size={14} />
-            <span>ADMIN_USER</span>
+            <span>GUEST_USER</span>
           </div>
           <Link to="/login" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
             <LogOut size={16} />

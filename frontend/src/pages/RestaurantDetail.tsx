@@ -43,7 +43,7 @@ export function RestaurantDetail() {
            )}
            <div className="absolute inset-0 bg-gradient-to-t from-[var(--black)] to-transparent opacity-80"></div>
            
-           <h1 className="relative font-[var(--font-doto)] text-6xl md:text-[var(--display-xl)] text-[var(--text-display)] tracking-tighter mt-auto mb-8">
+           <h1 className="relative font-[var(--font-doto)] text-4xl md:text-6xl lg:text-[var(--display-xl)] text-[var(--text-display)] tracking-tighter mt-auto mb-4 md:mb-8 text-center px-4">
              {restaurant.name.toUpperCase()}
            </h1>
         </div>
@@ -71,7 +71,7 @@ export function RestaurantDetail() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-6 border-l border-[var(--border)] pl-12">
+        <div className="flex flex-col gap-6 md:border-l border-[var(--border)] md:pl-12">
           <div className="mb-4">
             <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] mb-2 uppercase tracking-widest">
               RATING

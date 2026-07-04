@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import type { RestaurantOrder } from '../types';
 import { Button } from './Button';
 
 interface Props {
   order: RestaurantOrder;
-  onDecision: (orderId: number, status: 'accepted' | 'rejected') => void;
+  onDecision: (orderId: number, status: 'accepted' | 'rejected', reason?: string) => void;
   onComplete: (orderId: number) => void;
   busy: boolean;
 }
@@ -12,8 +13,13 @@ function formatItems(items: unknown): string {
   if (!Array.isArray(items) || items.length === 0) return 'NO ITEM DETAILS SENT';
   return items
     .map((i) => {
+      // Format from frontend mock
       if (i && typeof i === 'object' && 'menuItemId' in i && 'qty' in i) {
-        return `[ ITEM_#${(i as { menuItemId: number }).menuItemId} ] × ${(i as { qty: number }).qty}`;
+        return `[ ITEM_#${(i as any).menuItemId} ] × ${(i as any).qty}`;
+      }
+      // Format from ordering microservice
+      if (i && typeof i === 'object' && 'name' in i && 'quantity' in i) {
+        return `${(i as any).name} × ${(i as any).quantity}`;
       }
       return JSON.stringify(i);
     })
@@ -21,6 +27,9 @@ function formatItems(items: unknown): string {
 }
 
 export function OrderTicket({ order, onDecision, onComplete, busy }: Props) {
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'text-[var(--warning)] border-[var(--warning)]';
@@ -54,20 +63,52 @@ export function OrderTicket({ order, onDecision, onComplete, busy }: Props) {
           {formatItems(order.items_snapshot)}
         </div>
         
-        <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-disabled)] mb-8">
+        <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-disabled)] mb-4">
           T: {new Date(order.created_at).toLocaleTimeString()}
         </div>
 
-        {order.status === 'pending' && (
+        {order.status === 'rejected' && order.reason && (
+          <div className="mb-6 p-4 border border-[var(--error)] text-[var(--error)] bg-[var(--surface-raised)]">
+            <div className="font-[var(--font-mono)] text-[var(--label)] uppercase tracking-widest mb-2">REASON FOR DECLINE:</div>
+            <div className="font-[var(--font-body)] text-sm">{order.reason}</div>
+          </div>
+        )}
+
+        {order.status === 'pending' && !isRejecting && (
           <div className="grid grid-cols-2 gap-4">
             <Button disabled={busy} variant="primary" onClick={() => onDecision(order.id, 'accepted')}>
               [ ACCEPT ]
             </Button>
-            <Button disabled={busy} variant="danger" onClick={() => onDecision(order.id, 'rejected')}>
+            <Button disabled={busy} variant="danger" onClick={() => setIsRejecting(true)}>
               [ REJECT ]
             </Button>
           </div>
         )}
+
+        {order.status === 'pending' && isRejecting && (
+          <div className="space-y-4">
+            <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--error)] uppercase tracking-widest">
+              PROVIDE REASON FOR REJECTION:
+            </div>
+            <input
+              type="text"
+              className="w-full bg-transparent border border-[var(--border-visible)] p-3 font-[var(--font-mono)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--error)] transition-colors"
+              placeholder="e.g. Out of stock, Kitchen busy..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              autoFocus
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <Button disabled={busy} variant="outline" onClick={() => setIsRejecting(false)}>
+                [ CANCEL ]
+              </Button>
+              <Button disabled={busy || !rejectReason.trim()} variant="danger" onClick={() => onDecision(order.id, 'rejected', rejectReason)}>
+                [ CONFIRM DECLINE ]
+              </Button>
+            </div>
+          </div>
+        )}
+        
         {order.status === 'accepted' && (
           <div className="w-full">
             <Button disabled={busy} variant="outline" className="w-full" onClick={() => onComplete(order.id)}>

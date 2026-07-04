@@ -25,9 +25,9 @@ export const api = {
     request<InventoryStatus>(`/restaurants/${restaurantId}/inventory`),
   getOrders: (restaurantId: number) =>
     request<RestaurantOrder[]>(`/restaurants/${restaurantId}/orders`),
-  updateOrderStatus: (restaurantId: number, orderId: number, status: OrderStatus) =>
+  updateOrderStatus: (restaurantId: number, orderId: number, status: OrderStatus, reason?: string) =>
     request<RestaurantOrder>(`/restaurants/${restaurantId}/orders/${orderId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, reason }),
     }),
 };

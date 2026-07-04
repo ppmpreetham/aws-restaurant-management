@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { useStore } from '../useStore';
+
+type PaymentStatus = 'PROCESSING' | 'SUCCESS' | 'FAILED';
 
 export function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'PROCESSING' | 'SUCCESS' | 'FAILED'>('PROCESSING');
+  const [status, setStatus] = useState<PaymentStatus>('PROCESSING');
+  const deductCredits = useStore((state) => state.deductCredits);
 
   const { type, amount, restaurantName } = location.state || { type: 'UNKNOWN', amount: 0, restaurantName: 'Unknown' };
 
@@ -13,10 +17,15 @@ export function Payment() {
     // Simulate payment processing
     const timer = setTimeout(() => {
       // 90% chance of success
-      setStatus(Math.random() > 0.1 ? 'SUCCESS' : 'FAILED');
+      const isSuccess = Math.random() > 0.1;
+      setStatus(isSuccess ? 'SUCCESS' : 'FAILED');
+      
+      if (isSuccess) {
+        deductCredits(amount);
+      }
     }, 2000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [amount, deductCredits]);
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center">

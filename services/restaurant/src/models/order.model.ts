@@ -1,6 +1,10 @@
 import { pool } from '../db';
 import { RestaurantOrder, RestaurantOrderStatus } from '../types';
 
+export interface ExtendedRestaurantOrder extends RestaurantOrder {
+  reason?: string | null;
+}
+
 export interface CreateIncomingOrderInput {
   restaurantId: number;
   externalOrderId: string;
@@ -41,14 +45,15 @@ export async function getOrderById(
 export async function updateOrderStatus(
   restaurantId: number,
   orderId: number,
-  status: RestaurantOrderStatus
+  status: RestaurantOrderStatus,
+  reason?: string
 ): Promise<RestaurantOrder | null> {
   const result = await pool.query<RestaurantOrder>(
     `UPDATE restaurant_orders
-     SET status = $3, updated_at = NOW()
+     SET status = $3, reason = $4, updated_at = NOW()
      WHERE id = $1 AND restaurant_id = $2
      RETURNING *`,
-    [orderId, restaurantId, status]
+    [orderId, restaurantId, status, reason ?? null]
   );
   return result.rows[0] ?? null;
 }

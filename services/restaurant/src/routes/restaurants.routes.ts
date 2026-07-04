@@ -174,7 +174,7 @@ router.patch('/restaurants/:id/orders/:orderId', async (req: Request, res: Respo
   const orderId = asId(req.params.orderId);
   if (!id || !orderId) return res.status(400).json({ error: 'Invalid id' });
 
-  const { status } = req.body ?? {};
+  const { status, reason } = req.body ?? {};
   const validStatuses: RestaurantOrderStatus[] = ['accepted', 'rejected', 'completed'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ error: `status must be one of ${validStatuses.join(', ')}` });
@@ -183,7 +183,7 @@ router.patch('/restaurants/:id/orders/:orderId', async (req: Request, res: Respo
   const existing = await OrderModel.getOrderById(id, orderId);
   if (!existing) return res.status(404).json({ error: 'Order not found for this restaurant' });
 
-  const updated = await OrderModel.updateOrderStatus(id, orderId, status);
+  const updated = await OrderModel.updateOrderStatus(id, orderId, status, reason);
   res.json(updated);
 });
 

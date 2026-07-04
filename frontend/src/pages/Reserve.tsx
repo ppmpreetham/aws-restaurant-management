@@ -3,12 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/restaurantApi';
 import { Button } from '../components/Button';
+import { useStore } from '../useStore';
 
 export function Reserve() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [partySize, setPartySize] = useState<number>(2);
+  const credits = useStore((state) => state.credits);
 
   const { data: restaurant, isLoading } = useQuery({
     queryKey: ['restaurant', id],
@@ -20,20 +22,31 @@ export function Reserve() {
     return <div className="animate-pulse font-[var(--font-mono)] text-[var(--text-secondary)]">[ LOADING... ]</div>;
   }
 
-  // Dummy dates for the calendar
+  // Mock availability based on restaurant capacity
   const today = new Date().getDate();
   const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setDate(today + i);
+    // Use some deterministic math so the mock doesn't jump randomly
+    const mockHash = (restaurant.id * 7 + i * 13) % 10;
+    const isAvailable = mockHash > 2; 
+    const tablesLeft = isAvailable ? (mockHash * 2) : 0;
     return {
       day: d.getDate(),
       month: d.toLocaleString('default', { month: 'short' }),
-      available: i % 3 !== 0, // randomly grey out some dates
+      available: isAvailable,
+      tablesLeft
     };
   });
 
+  const reservationCost = 50;
+  const taxes = 10;
+  const total = reservationCost + taxes;
+  const hasEnoughCredits = credits >= total;
+
   const handlePay = () => {
-    navigate('/payment', { state: { type: 'RESERVE', amount: 50, restaurantName: restaurant.name } });
+    if (!hasEnoughCredits) return;
+    navigate('/payment', { state: { type: 'RESERVE', amount: total, restaurantName: restaurant.name } });
   };
 
   return (
@@ -62,17 +75,20 @@ export function Reserve() {
                   disabled={!d.available}
                   onClick={() => setSelectedDate(i)}
                   className={`
-                    p-4 border font-[var(--font-mono)] flex flex-col items-center justify-center transition-colors
+                    p-2 md:p-4 border font-[var(--font-mono)] flex flex-col items-center justify-center transition-colors relative
                     ${!d.available 
-                      ? 'border-[var(--border)] text-[var(--text-disabled)] bg-transparent cursor-not-allowed opacity-50' 
+                      ? 'border-[var(--border)] text-[var(--text-disabled)] bg-[var(--surface)] cursor-not-allowed opacity-50' 
                       : selectedDate === i
                         ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--black)]'
                         : 'border-[var(--border-visible)] text-[var(--text-primary)] hover:border-[var(--text-secondary)]'
                     }
                   `}
                 >
-                  <span className="text-[var(--label)] mb-1 uppercase">{d.month}</span>
-                  <span className="text-2xl font-bold">{d.day}</span>
+                  <span className="text-[var(--label)] mb-1 uppercase text-xs md:text-sm">{d.month}</span>
+                  <span className="text-xl md:text-2xl font-bold mb-1 md:mb-2">{d.day}</span>
+                  <span className={`text-[10px] md:text-xs font-bold uppercase ${selectedDate === i ? 'text-[var(--black)]' : 'text-[var(--accent)]'}`}>
+                    {d.tablesLeft} LEFT
+                  </span>
                 </button>
               ))}
             </div>
@@ -83,7 +99,7 @@ export function Reserve() {
             <h2 className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] uppercase tracking-widest mb-6">
               02. PARTY SIZE
             </h2>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-3 md:gap-4">
               {[1, 2, 3, 4, 5, 6].map(size => (
                 <button
                   key={size}
@@ -126,17 +142,17 @@ export function Reserve() {
                 TOTAL
               </span>
               <span className="font-[var(--font-doto)] text-4xl text-[var(--text-display)]">
-                $50.00
+                ${total.toFixed(2)}
               </span>
             </div>
 
             <Button 
-              variant="primary" 
+              variant={!hasEnoughCredits ? "danger" : "primary"}
               className="w-full" 
-              disabled={selectedDate === null}
+              disabled={selectedDate === null || !hasEnoughCredits}
               onClick={handlePay}
             >
-              [ PAY & CONFIRM ]
+              {!hasEnoughCredits ? '[ INSUFFICIENT CREDITS ]' : '[ PAY & CONFIRM ]'}
             </Button>
           </div>
         </div>

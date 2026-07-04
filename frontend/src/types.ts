@@ -29,6 +29,7 @@ export interface RestaurantOrder {
   restaurant_id: number;
   items_snapshot: unknown;
   status: OrderStatus;
+  reason?: string;
   created_at: string;
 }
 

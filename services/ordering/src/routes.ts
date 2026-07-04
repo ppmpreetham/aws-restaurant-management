@@ -100,7 +100,25 @@ router.post("/orders", async (req, res) => {
         });
 
         if (!fetchRes.ok) {
-            console.error("Failed to forward order to restaurant service", await fetchRes.text());
+            const errorText = await fetchRes.text();
+            console.error("Failed to forward order to restaurant service", errorText);
+            
+            // If the restaurant service rejected it because of capacity or being closed
+            if (fetchRes.status === 409) {
+                // We should technically rollback the order in our DB if we wanted distributed transactions, 
+                // but for this project we can just mark it rejected in our DB or let it be. 
+                // Let's update our order status to rejected.
+                await pool.query("UPDATE orders SET status = 'Rejected', reason = $2 WHERE id = $1", [order.id, "Restaurant rejected the order: " + errorText]);
+                
+                let parsedError = errorText;
+                try {
+                    parsedError = JSON.parse(errorText).error || errorText;
+                } catch(e) {}
+                
+                return res.status(409).json({
+                    error: parsedError
+                });
+            }
         }
 
         res.status(201).json(order);

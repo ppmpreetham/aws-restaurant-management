@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/restaurantApi';
 import { placeOrder } from '../api/orderAPI';
 import { Button } from '../components/Button';
+import { useStore } from '../useStore';
 import type { MenuItem } from '../types';
 
 export function OrderFlow() {
@@ -11,13 +12,20 @@ export function OrderFlow() {
   const navigate = useNavigate();
   const [cart, setCart] = useState<{ item: MenuItem; quantity: number }[]>([]);
 
-  const { data: restaurant } = useQuery({
+  const { data: restaurant, isLoading } = useQuery({
     queryKey: ['restaurant', id],
     queryFn: () => api.getRestaurant(Number(id)),
     enabled: !!id
   });
 
-  const { data: menu, isLoading } = useQuery({
+  const { data: inventory } = useQuery({
+    queryKey: ['inventory', id],
+    queryFn: () => api.getInventory(Number(id)),
+    enabled: !!id,
+    refetchInterval: 5000 // Poll every 5s for live queue status
+  });
+
+  const { data: menu } = useQuery({
     queryKey: ['menu', id],
     queryFn: () => api.getMenu(Number(id)),
     enabled: !!id
@@ -39,15 +47,18 @@ export function OrderFlow() {
 
   const totals = useMemo(() => {
     const subtotal = cart.reduce((acc, curr) => acc + (Number(curr.item.price) * curr.quantity), 0);
-    const taxes = subtotal * 0.05;
+    const taxes = subtotal * 0.08; // 8% tax
     return { subtotal, taxes, total: subtotal + taxes };
   }, [cart]);
+
+  const credits = useStore((state) => state.credits);
+  const hasEnoughCredits = credits >= totals.total;
 
   const [isPlacing, setIsPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handlePay = async () => {
-    if (!restaurant) return;
+    if (!restaurant || !hasEnoughCredits) return;
     setIsPlacing(true);
     setError(null);
     try {
@@ -73,20 +84,28 @@ export function OrderFlow() {
   }
 
   return (
-    <div className="animate-in fade-in duration-300">
-      <header className="mb-12 border-b border-[var(--border)] pb-8">
-        <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] tracking-widest uppercase mb-4">
-          ORDER / {restaurant.name}
+    <div className="animate-in fade-in duration-300 max-w-7xl mx-auto">
+      <header className="mb-8 md:mb-12 border-b border-[var(--border)] pb-6 md:pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] tracking-widest uppercase mb-4">
+            ORDER / {restaurant.name}
+          </div>
+          <h1 className="font-[var(--font-doto)] text-4xl md:text-[var(--display-lg)] text-[var(--text-display)] tracking-tighter leading-none">
+            MENU
+          </h1>
         </div>
-        <h1 className="font-[var(--font-doto)] text-[var(--display-lg)] text-[var(--text-display)] tracking-tighter leading-none">
-          MENU
-        </h1>
+        {inventory && (
+          <div className="font-[var(--font-mono)] text-[var(--label)] uppercase tracking-widest bg-[var(--surface-raised)] p-3 border border-[var(--border-visible)] self-start md:self-auto">
+            <span className="text-[var(--text-secondary)]">QUEUE LENGTH: </span>
+            <span className={inventory.canAcceptOrders ? 'text-[var(--text-primary)]' : 'text-[var(--accent)] font-bold'}>
+              {inventory.activeOrders} ORDERS AHEAD
+            </span>
+          </div>
+        )}
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        
-        {/* Menu Grid */}
-        <div className="lg:col-span-2">
+      <div className="flex flex-col lg:flex-row gap-8 md:gap-12 relative">
+        <div className="flex-1">
           {menu && menu.length === 0 && (
             <div className="text-[var(--text-secondary)]">No menu items found.</div>
           )}
@@ -109,8 +128,8 @@ export function OrderFlow() {
         </div>
 
         {/* Cart Sidebar */}
-        <div>
-          <div className="border border-[var(--border-visible)] p-8 bg-[var(--surface-raised)] sticky top-8 dot-grid-subtle relative">
+        <div className="w-full lg:w-96 shrink-0 order-first lg:order-last mb-8 lg:mb-0">
+          <div className="sticky top-8 border border-[var(--border-visible)] p-8 bg-[var(--surface-raised)] relative">
             <div className="absolute inset-0 bg-[var(--surface-raised)] opacity-90"></div>
             <div className="relative">
               <h3 className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] uppercase tracking-widest mb-8 border-b border-[var(--border)] pb-4">
@@ -172,12 +191,12 @@ export function OrderFlow() {
               )}
 
               <Button 
-                variant="primary" 
+                variant={!hasEnoughCredits ? "danger" : "primary"}
                 className="w-full" 
-                disabled={cart.length === 0 || isPlacing}
+                disabled={cart.length === 0 || isPlacing || !hasEnoughCredits}
                 onClick={handlePay}
               >
-                {isPlacing ? '[ PROCESSING... ]' : '[ CHECKOUT ]'}
+                {!hasEnoughCredits ? '[ INSUFFICIENT CREDITS ]' : isPlacing ? '[ PROCESSING... ]' : '[ CHECKOUT ]'}
               </Button>
             </div>
           </div>
