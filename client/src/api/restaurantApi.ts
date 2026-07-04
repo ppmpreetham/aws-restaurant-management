@@ -1,9 +1,9 @@
 import type { InventoryStatus, MenuItem, Restaurant, RestaurantOrder, OrderStatus } from '../types';
 
 // Set VITE_API_URL in a .env file at the frontend root, e.g.:
-//   VITE_API_URL=http://localhost:4000/api           (local)
-//   VITE_API_URL=http://<ec2-public-ip>:4000/api      (deployed)
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api';
+//   VITE_API_URL=http://localhost:8001/api           (local)
+//   VITE_API_URL=http://<ec2-public-ip>:8001/api      (deployed)
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8001/api';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {

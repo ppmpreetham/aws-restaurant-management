@@ -3,7 +3,7 @@ dotenv.config();
 
 import { createApp } from './app';
 
-const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8001;
 
 const app = createApp();
 

@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:4002/api";
+const BASE_URL = import.meta.env.VITE_ORDER_API_URL ?? "http://localhost:8003/api";
 
 export interface OrderItem {
   name: string;

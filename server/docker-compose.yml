@@ -31,7 +31,7 @@ services:
 
   search:
     profiles: ['future']
-    build: ./search
+    build: ./search-service
     ports:
       - "8004:8004"
     depends_on:
