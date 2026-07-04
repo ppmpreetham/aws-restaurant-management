@@ -1,63 +1,30 @@
-import { useState } from "react";
-import { Browse } from "./pages/Browse";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { Login } from "./pages/Login";
+import { Search } from "./pages/Search";
 import { Kitchen } from "./pages/Kitchen";
-import Orders from "./pages/Orders";
-import "./App.css";
-
-type Tab = "browse" | "kitchen" | "orders";
+import { RestaurantDetail } from "./pages/RestaurantDetail";
+import { Reserve } from "./pages/Reserve";
+import { OrderFlow } from "./pages/OrderFlow";
+import { Payment } from "./pages/Payment";
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>("browse");
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState<number | null>(null);
-
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div className="app-header__brand">
-          <span className="app-header__mark">TT</span>
-          <div>
-            <h1>Table &amp; Tray</h1>
-            <p>
-              Restaurant service: listings, menus, kitchen desk &amp; customer
-              ordering
-            </p>
-          </div>
-        </div>
-
-        <nav className="tabs">
-          <button
-            className={tab === "browse" ? "tab tab--active" : "tab"}
-            onClick={() => setTab("browse")}
-          >
-            Browse
-          </button>
-
-          <button
-            className={tab === "kitchen" ? "tab tab--active" : "tab"}
-            onClick={() => setTab("kitchen")}
-          >
-            Kitchen Desk
-          </button>
-
-          <button
-            className={tab === "orders" ? "tab tab--active" : "tab"}
-            onClick={() => setTab("orders")}
-          >
-            🍽 Order Food
-          </button>
-        </nav>
-      </header>
-
-      <main className="app-main">
-        {tab === "browse" && (
-          <Browse
-            selectedRestaurantId={selectedRestaurantId}
-            onSelectRestaurantId={setSelectedRestaurantId}
-          />
-        )}
-        {tab === "kitchen" && <Kitchen />}
-        {tab === "orders" && <Orders restaurantId={selectedRestaurantId ?? 1} />}
-      </main>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        
+        {/* Protected routes wrapped in Layout */}
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/search" replace />} />
+          <Route path="search" element={<Search />} />
+          <Route path="kitchen" element={<Kitchen />} />
+          <Route path="restaurant/:id" element={<RestaurantDetail />} />
+          <Route path="restaurant/:id/reserve" element={<Reserve />} />
+          <Route path="restaurant/:id/order" element={<OrderFlow />} />
+          <Route path="payment" element={<Payment />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }

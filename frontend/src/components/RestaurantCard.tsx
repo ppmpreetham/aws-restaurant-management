@@ -1,32 +1,39 @@
-import type { Restaurant } from '../types';
+import { Link } from "react-router-dom";
+import type { Restaurant } from "../types";
 
-interface Props {
+interface RestaurantCardProps {
   restaurant: Restaurant;
-  onSelect: (r: Restaurant) => void;
-  selected: boolean;
 }
 
-export function RestaurantCard({ restaurant, onSelect, selected }: Props) {
+export function RestaurantCard({ restaurant }: RestaurantCardProps) {
   return (
-    <button
-      className={`restaurant-card ${selected ? 'restaurant-card--selected' : ''}`}
-      onClick={() => onSelect(restaurant)}
+    <Link 
+      to={`/restaurant/${restaurant.id}`}
+      className="group block bg-[var(--surface)] border border-[var(--border-visible)] p-6 hover:border-[var(--text-secondary)] transition-colors relative overflow-hidden"
     >
-      <div
-        className="restaurant-card__image"
-        style={{ backgroundImage: `url(${restaurant.image_url ?? ''})` }}
-      />
-      <div className="restaurant-card__body">
-        <div className="restaurant-card__top">
-          <h3>{restaurant.name}</h3>
-          <span className="pill">{restaurant.price_range}</span>
-        </div>
-        <p className="restaurant-card__meta">
-          {restaurant.cuisine_type} · ★ {restaurant.rating}
-        </p>
-        <p className="restaurant-card__desc">{restaurant.description}</p>
-        {!restaurant.is_open && <span className="badge badge--closed">Closed</span>}
+      <div className="absolute top-0 right-0 p-4">
+        <span className="font-[var(--font-doto)] text-4xl text-[var(--text-display)]">
+          {Number(restaurant.rating).toFixed(1)}
+        </span>
       </div>
-    </button>
+      
+      <div className="mb-12">
+        <h2 className="font-[var(--font-body)] text-2xl font-bold mb-2 pr-16">{restaurant.name}</h2>
+        <div className="flex items-center gap-3 font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] tracking-widest uppercase">
+          <span>{restaurant.cuisine_type}</span>
+          <span>•</span>
+          <span>{restaurant.price_range}</span>
+        </div>
+      </div>
+      
+      <div className="pt-6 border-t border-[var(--border)] flex justify-between items-end">
+        <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-secondary)] uppercase">
+          [ {restaurant.is_open ? <span className="text-[var(--success)]">OPEN NOW</span> : <span className="text-[var(--text-disabled)]">CLOSED</span>} ]
+        </div>
+        <div className="font-[var(--font-mono)] text-[var(--label)] text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--interactive)] transition-colors">
+          DETAILS -&gt;
+        </div>
+      </div>
+    </Link>
   );
 }
