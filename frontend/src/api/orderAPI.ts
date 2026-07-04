@@ -1,4 +1,14 @@
-const BASE_URL = import.meta.env.VITE_ORDER_API_URL ?? "http://localhost:8080/api";
+import { useStore } from "../useStore";
+
+const BASE_URL = import.meta.env.VITE_ORDER_API_URL ?? "/api/orders";
+
+function getHeaders() {
+  const token = useStore.getState().token;
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
 
 export interface OrderItem {
   name: string;
@@ -24,11 +34,9 @@ export interface OrderResponse {
 export async function placeOrder(
   order: CreateOrderRequest
 ): Promise<OrderResponse> {
-  const response = await fetch(`${BASE_URL}/orders`, {
+  const response = await fetch(`${BASE_URL}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getHeaders(),
     body: JSON.stringify(order),
   });
 
@@ -41,7 +49,7 @@ export async function placeOrder(
 }
 
 export async function getOrders() {
-  const response = await fetch(`${BASE_URL}/orders`);
+  const response = await fetch(`${BASE_URL}`, { headers: getHeaders() });
 
   if (!response.ok) {
     throw new Error("Failed to fetch orders");
@@ -51,7 +59,7 @@ export async function getOrders() {
 }
 
 export async function getOrder(id: number) {
-  const response = await fetch(`${BASE_URL}/orders/${id}`);
+  const response = await fetch(`${BASE_URL}/${id}`, { headers: getHeaders() });
 
   if (!response.ok) {
     throw new Error("Failed to fetch order");
@@ -61,8 +69,9 @@ export async function getOrder(id: number) {
 }
 
 export async function cancelOrder(id: number) {
-  const response = await fetch(`${BASE_URL}/orders/${id}/cancel`, {
+  const response = await fetch(`${BASE_URL}/${id}/cancel`, {
     method: "PATCH",
+    headers: getHeaders()
   });
 
   if (!response.ok) {

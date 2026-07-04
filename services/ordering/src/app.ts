@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import routes from "./routes";
+import authRoutes from "./auth";
 
 export function createApp() {
 
@@ -19,6 +20,7 @@ export function createApp() {
 
     });
 
+    app.use("/api/auth", authRoutes);
     app.use("/api", routes);
 
     return app;

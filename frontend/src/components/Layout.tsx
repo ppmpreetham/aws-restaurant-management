@@ -5,19 +5,22 @@ import { useStore } from "../useStore";
 
 export function Layout() {
   const location = useLocation();
-  const { credits, setCredits } = useStore();
+  const { credits, setCredits, user, token, logout } = useStore();
 
   useEffect(() => {
-    // Mock user id 1
-    fetch('http://localhost:8080/api/users/1/credits')
-      .then(res => res.json())
-      .then(data => {
-        if (data.credits !== undefined) {
-          setCredits(data.credits);
-        }
+    if (user && token) {
+      fetch(`/api/users/${user.id}/credits`, {
+        headers: { Authorization: `Bearer ${token}` }
       })
-      .catch(err => console.error(err));
-  }, [setCredits]);
+        .then(res => res.json())
+        .then(data => {
+          if (data.credits !== undefined) {
+            setCredits(data.credits);
+          }
+        })
+        .catch(err => console.error(err));
+    }
+  }, [user, token, setCredits]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -48,6 +51,14 @@ export function Layout() {
             >
               [ KITCHEN ]
             </Link>
+            {user?.role === 'admin' && (
+              <Link 
+                to="/admin" 
+                className={`hover:text-[var(--text-primary)] transition-colors ${location.pathname.startsWith('/admin') ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+              >
+                [ ADMIN ]
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -58,11 +69,17 @@ export function Layout() {
           </div>
           <div className="hidden sm:flex items-center gap-2 text-[var(--text-secondary)] font-[var(--font-mono)] text-[var(--label)] ml-2">
             <User size={14} />
-            <span>GUEST_USER</span>
+            <span>{user ? user.username.toUpperCase() : 'GUEST'}</span>
           </div>
-          <Link to="/login" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
-            <LogOut size={16} />
-          </Link>
+          {user ? (
+            <button onClick={logout} className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors cursor-pointer">
+              <LogOut size={16} />
+            </button>
+          ) : (
+            <Link to="/login" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
+              <LogOut size={16} />
+            </Link>
+          )}
         </div>
       </header>
 

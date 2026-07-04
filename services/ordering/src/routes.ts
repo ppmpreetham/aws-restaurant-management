@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { pool, withTransaction } from "./db";
+import { authMiddleware, adminMiddleware } from "./auth";
 import { v4 as uuidv4 } from "uuid";
 
 const router = Router();
@@ -22,7 +23,7 @@ Body
 }
 */
 
-router.post("/orders", async (req, res) => {
+router.post("/orders", authMiddleware, async (req, res) => {
     try {
 
         const { customerName, restaurantId, items } = req.body;
@@ -39,8 +40,8 @@ router.post("/orders", async (req, res) => {
             0
         );
 
-        // Assume user ID 1 for now (mock user)
-        const userId = 1;
+        // Use authenticated user ID
+        const userId = (req as any).user.id;
 
         const orderUUID = uuidv4();
 
@@ -186,9 +187,23 @@ router.post("/orders", async (req, res) => {
     }
 });
 
-router.get("/users/:id/credits", async (req, res) => {
+router.get("/users", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const result = await pool.query("SELECT id, name, username, role, credits, created_at FROM users ORDER BY created_at DESC");
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+router.get("/users/:id/credits", authMiddleware, async (req, res) => {
     try {
         const id = Number(req.params.id);
+        const user = (req as any).user;
+        if (user.id !== id && user.role !== 'admin') {
+            return res.status(403).json({ error: "Forbidden" });
+        }
         const result = await pool.query("SELECT credits FROM users WHERE id = $1", [id]);
         
         if (result.rows.length === 0) {
@@ -202,7 +217,7 @@ router.get("/users/:id/credits", async (req, res) => {
     }
 });
 
-router.get("/orders", async (_req, res) => {
+router.get("/orders", authMiddleware, adminMiddleware, async (_req, res) => {
     try {
 
         const result = await pool.query(`
@@ -224,7 +239,7 @@ router.get("/orders", async (_req, res) => {
     }
 });
 
-router.get("/orders/:id", async (req, res) => {
+router.get("/orders/:id", authMiddleware, async (req, res) => {
 
     try {
 
@@ -273,7 +288,7 @@ router.get("/orders/:id", async (req, res) => {
 
 });
 
-router.patch("/orders/:id/cancel", async (req, res) => {
+router.patch("/orders/:id/cancel", authMiddleware, adminMiddleware, async (req, res) => {
 
     try {
 

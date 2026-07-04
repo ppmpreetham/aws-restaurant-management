@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS order_items (
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'user',
     credits NUMERIC(10,2) NOT NULL DEFAULT 500.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -35,5 +38,8 @@ CREATE TABLE IF NOT EXISTS credit_transactions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert a mock user for testing
-INSERT INTO users (name, credits) VALUES ('admin', 500.00) ON CONFLICT DO NOTHING;
+-- Insert a mock user and admin for testing
+INSERT INTO users (name, username, password_hash, role, credits) VALUES 
+('Admin User', 'admin', '$2b$10$6JzTUxfwuCXrIbLBC8yWQ.9p62PI5.mXtKmpyN1gX1..xlgGKNlIW', 'admin', 500.00),
+('Test User', 'testuser', '$2b$10$6JzTUxfwuCXrIbLBC8yWQ.9p62PI5.mXtKmpyN1gX1..xlgGKNlIW', 'user', 500.00)
+ON CONFLICT (username) DO NOTHING;

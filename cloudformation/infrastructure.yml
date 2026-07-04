@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AWS Restaurant Management System - 10/10 Architecture'
+Description: 'AWS Restaurant Management System - 10/10 Architecture (Learner Lab Compatible)'
 
 Parameters:
   VpcCidr:
@@ -231,118 +231,6 @@ Resources:
           SourceSecurityGroupId: !Ref SearchSG
 
   # ---------------------------------------------------------
-  # IAM ROLES
-  # ---------------------------------------------------------
-  BaseInstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
-      Policies:
-        - PolicyName: Route53Registration
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - route53:ChangeResourceRecordSets
-                  - route53:ListResourceRecordSets
-                Resource: !Sub "arn:aws:route53:::hostedzone/${PrivateHostedZone}"
-
-  RestaurantInstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
-      Policies:
-        - PolicyName: Route53Registration
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - route53:ChangeResourceRecordSets
-                  - route53:ListResourceRecordSets
-                Resource: !Sub "arn:aws:route53:::hostedzone/${PrivateHostedZone}"
-        - PolicyName: S3Access
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:GetObject
-                Resource: !Sub "${ImageBucket.Arn}/*"
-
-  ReservationInstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
-      Policies:
-        - PolicyName: Route53Registration
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - route53:ChangeResourceRecordSets
-                  - route53:ListResourceRecordSets
-                Resource: !Sub "arn:aws:route53:::hostedzone/${PrivateHostedZone}"
-        - PolicyName: SNSAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: sns:Publish
-                Resource: !Ref ReservationTopic
-
-  BaseInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        - !Ref BaseInstanceRole
-
-  RestaurantInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        - !Ref RestaurantInstanceRole
-
-  ReservationInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        - !Ref ReservationInstanceRole
-
-  # ---------------------------------------------------------
   # STORAGE & CDN
   # ---------------------------------------------------------
   ImageBucket:
@@ -351,41 +239,9 @@ Resources:
       BucketName: !Sub "restaurant-assets-${AWS::AccountId}-${AWS::Region}"
       VersioningConfiguration:
         Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-
-  CloudFrontOAC:
-    Type: AWS::CloudFront::OriginAccessControl
-    Properties:
-      OriginAccessControlConfig:
-        Name: S3-OAC
-        OriginAccessControlOriginType: s3
-        SigningBehavior: always
-        SigningProtocol: sigv4
-
-  CloudFrontDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Enabled: true
-        Aliases:
-          - !Sub "cdn.${AWS::Region}.internal" # Example placeholder for actual domain
-        Origins:
-          - Id: S3Origin
-            DomainName: !GetAtt ImageBucket.RegionalDomainName
-            S3OriginConfig:
-              OriginAccessIdentity: ""
-            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
-        DefaultCacheBehavior:
-          TargetOriginId: S3Origin
-          ViewerProtocolPolicy: redirect-to-https
-          AllowedMethods: [ GET, HEAD, OPTIONS ]
-          CachedMethods: [ GET, HEAD ]
-          ForwardedValues:
-            QueryString: false
+      # We removed the PublicAccessBlockConfiguration so that standard
+      # bucket policies can allow public read if needed.
+      # CloudFront has been completely removed.
 
   BucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -395,13 +251,9 @@ Resources:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
-            Principal:
-              Service: cloudfront.amazonaws.com
+            Principal: "*"
             Action: s3:GetObject
             Resource: !Sub "${ImageBucket.Arn}/*"
-            Condition:
-              StringEquals:
-                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution.Id}"
 
   # ---------------------------------------------------------
   # MESSAGING
@@ -472,7 +324,7 @@ Resources:
       Protocol: HTTP
       HealthCheckPath: /api/restaurants
       Matcher:
-        HttpCode: 200,301,302,404 # Depends on what route exists
+        HttpCode: 200,301,302,404
 
   ReservationTG:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -480,7 +332,7 @@ Resources:
       VpcId: !Ref VPC
       Port: 8002
       Protocol: HTTP
-      HealthCheckPath: /health # Make sure you have a health endpoint
+      HealthCheckPath: /health
 
   OrderingTG:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -575,8 +427,9 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref LatestAmiId
         InstanceType: t3.micro
+        KeyName: vockey
         IamInstanceProfile:
-          Arn: !GetAtt RestaurantInstanceProfile.Arn
+          Name: LabInstanceProfile
         SecurityGroupIds:
           - !Ref RestaurantSG
         UserData:
@@ -649,8 +502,9 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref LatestAmiId
         InstanceType: t3.micro
+        KeyName: vockey
         IamInstanceProfile:
-          Arn: !GetAtt ReservationInstanceProfile.Arn
+          Name: LabInstanceProfile
         SecurityGroupIds:
           - !Ref ReservationSG
         UserData:
@@ -723,8 +577,9 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref LatestAmiId
         InstanceType: t3.micro
+        KeyName: vockey
         IamInstanceProfile:
-          Arn: !GetAtt BaseInstanceProfile.Arn
+          Name: LabInstanceProfile
         SecurityGroupIds:
           - !Ref OrderingSG
         UserData:
@@ -798,8 +653,9 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref LatestAmiId
         InstanceType: t3.micro
+        KeyName: vockey
         IamInstanceProfile:
-          Arn: !GetAtt BaseInstanceProfile.Arn
+          Name: LabInstanceProfile
         SecurityGroupIds:
           - !Ref SearchSG
         UserData:
@@ -894,5 +750,5 @@ Resources:
 Outputs:
   LoadBalancerUrl:
     Value: !Sub "http://${ApplicationLoadBalancer.DNSName}"
-  CloudFrontUrl:
-    Value: !GetAtt CloudFrontDistribution.DomainName
+  S3BucketUrl:
+    Value: !Sub "https://${ImageBucket}.s3.amazonaws.com"
